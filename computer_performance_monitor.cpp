@@ -24,6 +24,7 @@ HWND hLabeHardwareStatusInfoGpuInfo1Value;
 HWND hLabeHardwareStatusInfoMemoryInfo1Value;
 HWND hLabeHardwareStatusInfoCpuInfo2Value;
 HWND hLabeHardwareStatusInfoCpuInfo1Value;
+HWND hLabeConnentInfo;
 Hardware* hardware;
 SerialPorts* serialPorts;
 
@@ -38,6 +39,7 @@ wchar_t  memoryInfo1Value[20];
 wchar_t  gpuInfo1Value[20];
 wchar_t  gpuInfo2Value[20];
 wchar_t  gpuInfo3Value[20];
+wchar_t  connentInfoValue[20];
 unsigned __stdcall refreshInfoThreadFunc(void* data) {
 
 	while (true)
@@ -60,7 +62,8 @@ unsigned __stdcall refreshInfoThreadFunc(void* data) {
 		swprintf_s(gpuInfo1Value, 20, L"%d%%", gpuInfo.load);
 		swprintf_s(gpuInfo2Value, 20, L"%d℃", gpuInfo.temperature);
 		swprintf_s(gpuInfo3Value, 20, L"%d%% （%dGB/%dGB）", gpuInfo.ramInfo.load, gpuInfo.ramInfo.used, gpuInfo.ramInfo.total);
-
+		swprintf_s(connentInfoValue, 20, serialPorts->isLink ? L"已连接" : L"未连接");
+		
 		try
 		{
 			serialPorts->writeData(0x5aa501, cpuInfo.temperature);
@@ -246,7 +249,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		12, 78, 130, 20, hWnd, NULL, NULL, NULL);
 	SendMessage(hLabeHardwareStatus, WM_SETFONT, (WPARAM)hFontBold20, TRUE);
 
-	HWND hLabeConnentInfo = CreateWindowEx(0, L"STATIC", L"未连接", WS_VISIBLE | WS_CHILD,
+	hLabeConnentInfo = CreateWindowEx(0, L"STATIC", L"未连接", WS_VISIBLE | WS_CHILD,
 		12 + 130, 54, 130, 20, hWnd, NULL, NULL, NULL);
 	SendMessage(hLabeConnentInfo, WM_SETFONT, (WPARAM)hFont20, TRUE);
 
@@ -442,6 +445,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		SetWindowText(hLabeHardwareStatusInfoGpuInfo1Value, gpuInfo1Value);
 		SetWindowText(hLabeHardwareStatusInfoGpuInfo2Value, gpuInfo2Value);
 		SetWindowText(hLabeHardwareStatusInfoGpuInfo3Value, gpuInfo3Value);
+		SetWindowText(hLabeConnentInfo, connentInfoValue);
 		return 0;
 	}
 	default:
