@@ -21,7 +21,7 @@ void Ram::upData() {
         // 计算内存使用率
         double memoryUsage = 100.0 * (totalPhysicalMemory - availablePhysicalMemory) / totalPhysicalMemory;
 
-        total = totalPhysicalMemory / (1024 * 1024 * 1024);
+        total = totalPhysicalMemory / (1024 * 1024 * 1024) + 1;
         used = total - availablePhysicalMemory / (1024 * 1024 * 1024);
         load = memoryLoad;
     }
