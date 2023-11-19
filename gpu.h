@@ -1,7 +1,7 @@
 #pragma once
 #include <stdexcept>
 #include "nvml.h"
-#pragma comment(lib, "nvml.lib")
+//#pragma comment(lib, "nvml.lib")
 #include <Windows.h>
 enum GpuVendor
 {
