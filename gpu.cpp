@@ -153,7 +153,7 @@ void Gpu::upDate() {
 				throw std::invalid_argument("无法获取英伟达显卡利用率");
 			}
 
-			gpuRamTotal = uint8_t(memory.total / 1024 / 1024 / 1024) + 1;
+			gpuRamTotal = uint8_t(memory.total / 1024 / 1024 / 1024);
 			gpuRamUsed = uint8_t(memory.used / 1024 / 1024 / 1024);
 			gpuRamLoad = uint8_t(memory.used * 100 / memory.total);
 			gpuLoad = uint8_t(utilization.gpu);
