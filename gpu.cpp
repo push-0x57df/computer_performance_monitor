@@ -23,7 +23,7 @@ void Gpu::nvidiaInit() {
 	nvmlLibrary = LoadLibraryA("nvml.dll");
 	if (nvmlLibrary == NULL) {
 		// std::cout << "Failed to load NVML library." << std::endl;
-		throw std::invalid_argument("Failed to load NVML library.");
+		throw std::invalid_argument("加载英伟达显卡驱动dll失败");
 	}
 
 	// 加载函数
@@ -38,19 +38,19 @@ void Gpu::nvidiaInit() {
 
 	// 判断是否加载成功
 	if (!nvmlInit_f || !nvmlShutdown_f || !nvmlDeviceGetCount_f || !nvmlDeviceGetHandleByIndex_f || !nvmlDeviceGetTemperature_f || !nvmlDeviceGetMemoryInfo_f || !nvmlDeviceGetUtilizationRates_f) {
-		throw std::invalid_argument("Failed to load NVML library.");
+		throw std::invalid_argument("加载英伟达显卡驱动dll失败");
 	}
 
 	result = nvmlInit_f();
 	if (result != NVML_SUCCESS) {
 		// std::cout << "Failed to initialize NVML: " << nvmlErrorString(result) << std::endl;
-		throw std::invalid_argument("Failed to initialize NVML");
+		throw std::invalid_argument("加载英伟达显卡驱动dll失败");
 	}
 	gpuVendor = gpu_nvidia;
 }
 
 void Gpu::amdInit() {
-	throw std::invalid_argument("wait build.");
+	throw std::invalid_argument("暂时无法检测AMD显卡");
 }
 
 Gpu::Gpu()
@@ -65,16 +65,19 @@ Gpu::Gpu()
 	{
 		nvidiaInit();
 	}
-	catch (const std::exception&)
+	catch (const std::exception& e)
 	{
 		try
 		{
 			amdInit();
 			gpuVendor = gpu_amd;
 		}
-		catch (const std::exception&)
+		catch (const std::exception&e2)
 		{
-
+			std::string err = e.what();
+			err += " ";
+			err += e2.what();
+			//throw std::invalid_argument(err);
 		}
 	}
 }
@@ -104,7 +107,7 @@ void Gpu::upDate() {
 		result = nvmlDeviceGetCount_f(&deviceCount);
 		if (result != NVML_SUCCESS) {
 			// std::cout << "Failed to get device count: " << nvmlErrorString(result) << std::endl;
-			throw std::invalid_argument("Failed to get device count.");
+			throw std::invalid_argument("无法获取英伟达显卡数量");
 			FreeLibrary(nvmlLibrary);
 			nvmlShutdown_f();
 		}
@@ -119,7 +122,7 @@ void Gpu::upDate() {
 			result = nvmlDeviceGetHandleByIndex_f(i, &device);
 			if (result != NVML_SUCCESS) {
 				// std::cout << "Failed to get device handle: " << nvmlErrorString(result) << std::endl;
-				throw std::invalid_argument("Failed to get device handle.");
+				throw std::invalid_argument("无法获取英伟达显卡操作句柄");
 			}
 //			
 //			result = nvmlDeviceGetName(device, name, NVML_DEVICE_NAME_BUFFER_SIZE);
@@ -133,21 +136,21 @@ void Gpu::upDate() {
 			result = nvmlDeviceGetTemperature_f(device, sensorType, &temperature);
 			if (result != NVML_SUCCESS) {
 				// std::cout << "Failed to get temperature: " << nvmlErrorString(result) << std::endl;
-				throw std::invalid_argument("Failed to get temperature.");
+				throw std::invalid_argument("无法获取英伟达显卡温度");
 			}
 
 			nvmlMemory_t memory;
 			result = nvmlDeviceGetMemoryInfo_f(device, &memory);
 			if (result != NVML_SUCCESS) {
 				// std::cout << "Failed to get memory info: " << nvmlErrorString(result) << std::endl;
-				throw std::invalid_argument("Failed to get memory info.");
+				throw std::invalid_argument("无法获取英伟达显卡内存信息");
 			}
 
 			nvmlUtilization_t utilization;
 			result = nvmlDeviceGetUtilizationRates_f(device, &utilization);
 			if (result != NVML_SUCCESS) {
 				// std::cout << "Failed to get utilization rates: " << nvmlErrorString(result) << std::endl;
-				throw std::invalid_argument("Failed to get utilization rates.");
+				throw std::invalid_argument("无法获取英伟达显卡利用率");
 			}
 
 			gpuRamTotal = uint8_t(memory.total / 1024 / 1024 / 1024);
@@ -172,9 +175,9 @@ int Gpu::getGpuLoad() {
 	{
 		upDate();
 	}
-	catch (const std::exception&)
+	catch (const std::exception&e)
 	{
-
+		throw std::invalid_argument(e.what());
 	}
 	return gpuLoad;
 }
@@ -184,9 +187,9 @@ int Gpu::getGpuTemperature() {
 	{
 		upDate();
 	}
-	catch (const std::exception&)
+	catch (const std::exception&e)
 	{
-
+		throw std::invalid_argument(e.what());
 	}
 	return gpuTemperature;
 }
@@ -196,9 +199,9 @@ int Gpu::getGpuRamLoad() {
 	{
 		upDate();
 	}
-	catch (const std::exception&)
+	catch (const std::exception&e)
 	{
-
+		throw std::invalid_argument(e.what());
 	}
 	return gpuRamLoad;
 }
@@ -208,9 +211,9 @@ int Gpu::getGpuRamTotal() {
 	{
 		upDate();
 	}
-	catch (const std::exception&)
+	catch (const std::exception&e)
 	{
-
+		throw std::invalid_argument(e.what());
 	}
 	return gpuRamTotal;
 }
@@ -220,9 +223,9 @@ int Gpu::getGpuRamUsed() {
 	{
 		upDate();
 	}
-	catch (const std::exception&)
+	catch (const std::exception&e)
 	{
-
+		throw std::invalid_argument(e.what());
 	}
 	return gpuRamUsed;
 }

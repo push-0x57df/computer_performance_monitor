@@ -25,6 +25,7 @@ HWND hLabeHardwareStatusInfoMemoryInfo1Value;
 HWND hLabeHardwareStatusInfoCpuInfo2Value;
 HWND hLabeHardwareStatusInfoCpuInfo1Value;
 HWND hLabeConnentInfo;
+HWND listbox_hwnd;
 Hardware* hardware;
 SerialPorts* serialPorts;
 
@@ -40,6 +41,7 @@ wchar_t  gpuInfo1Value[20];
 wchar_t  gpuInfo2Value[20];
 wchar_t  gpuInfo3Value[20];
 wchar_t  connentInfoValue[20];
+wchar_t  logtxt[64];
 unsigned __stdcall refreshInfoThreadFunc(void* data) {
 
 	while (true)
@@ -77,9 +79,11 @@ unsigned __stdcall refreshInfoThreadFunc(void* data) {
 			serialPorts->writeData(0x5aa509, gpuInfo.ramInfo.used);
 			serialPorts->writeData(0x5aa50a, gpuInfo.ramInfo.total);
 		}
-		catch (const std::exception&)
+		catch (const std::exception&e)
 		{
-
+			std::string str = "[异常] ";
+			str += e.what();
+			SendMessageA(listbox_hwnd, LB_ADDSTRING, 0, (LPARAM)str.c_str());
 		}
 		
 		PostMessage(hWnd, WM_REFRESH_INFO_END, 0, 0);
@@ -96,7 +100,9 @@ void refreshInfo() {
 	}
 	else {
 		// 关闭线程句柄
-		CloseHandle(reinterpret_cast<HANDLE>(threadHandle));
+		if (threadHandle != 0) {
+			CloseHandle(reinterpret_cast<HANDLE>(threadHandle));
+		}
 	}
 
 }
@@ -107,7 +113,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_ int       nCmdShow)
 {
 	HANDLE hMutex = CreateMutex(NULL, TRUE, L"ComputerPerformanceMonitorUniqueMutex");
-	if (GetLastError() == ERROR_ALREADY_EXISTS)
+	if (GetLastError() == ERROR_ALREADY_EXISTS && hMutex != 0)
 	{
 		// 互斥体已经存在，表示程序已经在运行，用来限制程序只能同时启动一个实例
 		CloseHandle(hMutex);
@@ -132,19 +138,41 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_COMPUTERPERFORMANCEMONITOR));
 
+	swprintf_s(logtxt, L"[...] 初始化通信串口");
+	SendMessage(listbox_hwnd, LB_ADDSTRING, 0, (LPARAM)logtxt);
+	std::string str = "[异常] ";
+	try
+	{
+		serialPorts = new SerialPorts();
+	}
+	catch (const std::exception&e)
+	{
+		str += e.what();
+		SendMessageA(listbox_hwnd, LB_ADDSTRING, 0, (LPARAM)str.c_str());
+	}
+	swprintf_s(logtxt, L"[成功] 初始化通信串口完成");
+	SendMessage(listbox_hwnd, LB_ADDSTRING, 0, (LPARAM)logtxt);
+
+	swprintf_s(logtxt, L"[...] 初始化硬件性能读取模块");
+	SendMessage(listbox_hwnd, LB_ADDSTRING, 0, (LPARAM)logtxt);
 	try
 	{
 		hardware = new Hardware;
-		serialPorts = new SerialPorts();
-		refreshInfo();
 		hardware->getCpuInfo();
 		hardware->getRamInfo();
 		hardware->getGpuInfo();
 	}
-	catch (const std::exception&)
+	catch (const std::exception&e)
 	{
-
+		str += e.what();
+		SendMessageA(listbox_hwnd, LB_ADDSTRING, 0, (LPARAM)str.c_str());
 	}
+	swprintf_s(logtxt, L"[提示] 读数为0表示没有找到对应设备");
+	SendMessage(listbox_hwnd, LB_ADDSTRING, 0, (LPARAM)logtxt);
+	swprintf_s(logtxt, L"[成功] 初始化硬件性能读取模块完成");
+	SendMessage(listbox_hwnd, LB_ADDSTRING, 0, (LPARAM)logtxt);
+
+	refreshInfo();
 
 	MSG msg;
 
@@ -202,7 +230,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hInst = hInstance; // 将实例句柄存储在全局变量中
 
 	hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MINIMIZEBOX & ~WS_MAXIMIZEBOX,
-		CW_USEDEFAULT, 0, 400, 300, nullptr, nullptr, hInstance, nullptr);
+		CW_USEDEFAULT, 0, 400, 400, nullptr, nullptr, hInstance, nullptr);
 
 	if (!hWnd)
 	{
@@ -245,13 +273,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		12, 54, 130, 20, hWnd, NULL, NULL, NULL);
 	SendMessage(hLabeConnent, WM_SETFONT, (WPARAM)hFontBold20, TRUE);
 
-	HWND hLabeHardwareStatus = CreateWindowEx(0, L"STATIC", L"硬件状态：", WS_VISIBLE | WS_CHILD,
-		12, 78, 130, 20, hWnd, NULL, NULL, NULL);
-	SendMessage(hLabeHardwareStatus, WM_SETFONT, (WPARAM)hFontBold20, TRUE);
-
 	hLabeConnentInfo = CreateWindowEx(0, L"STATIC", L"未连接", WS_VISIBLE | WS_CHILD,
 		12 + 130, 54, 130, 20, hWnd, NULL, NULL, NULL);
 	SendMessage(hLabeConnentInfo, WM_SETFONT, (WPARAM)hFont20, TRUE);
+
+	HWND hLabeHardwareStatus = CreateWindowEx(0, L"STATIC", L"硬件状态：", WS_VISIBLE | WS_CHILD,
+		12, 78, 130, 20, hWnd, NULL, NULL, NULL);
+	SendMessage(hLabeHardwareStatus, WM_SETFONT, (WPARAM)hFontBold20, TRUE);
 
 	HWND hLabeHardwareStatusInfoCpuTitle = CreateWindowEx(0, L"STATIC", L"处理器", WS_VISIBLE | WS_CHILD,
 		20, 118, 46, 20, hWnd, NULL, NULL, NULL);
@@ -312,6 +340,29 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hLabeHardwareStatusInfoGpuInfo3Value = CreateWindowEx(0, L"STATIC", L"加载中", WS_VISIBLE | WS_CHILD,
 		170, 226, 180, 20, hWnd, NULL, NULL, NULL);
 	SendMessage(hLabeHardwareStatusInfoGpuInfo3Value, WM_SETFONT, (WPARAM)hFont20, TRUE);
+
+	HWND hLabeLog = CreateWindowEx(0, L"STATIC", L"运行日志：", WS_VISIBLE | WS_CHILD,
+		12, 258, 130, 20, hWnd, NULL, NULL, NULL);
+	SendMessage(hLabeLog, WM_SETFONT, (WPARAM)hFontBold20, TRUE);
+
+	// 创建多项列表控件
+	listbox_hwnd = CreateWindow(
+		L"LISTBOX",
+		NULL,
+		WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOTIFY,
+		10,
+		282,
+		370,
+		70,
+		hWnd,
+		NULL,
+		hInstance,
+		NULL
+	);
+
+	
+	swprintf_s(logtxt, L"[成功] 程序启动");
+	SendMessage(listbox_hwnd, LB_ADDSTRING, 0, (LPARAM)logtxt);
 
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);

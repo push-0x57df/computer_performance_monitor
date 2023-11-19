@@ -35,9 +35,9 @@ int Ram::readLoad() {
     {
         Ram::upData();
     }
-    catch (const std::exception&)
+    catch (const std::exception&e)
     {
-
+        throw std::invalid_argument(e.what());
     }
     return load;
 }
@@ -47,9 +47,9 @@ int Ram::readTotal() {
     {
         Ram::upData();
     }
-    catch (const std::exception&)
+    catch (const std::exception&e)
     {
-
+        throw std::invalid_argument(e.what());
     }
     return total;
 }
@@ -59,9 +59,9 @@ int Ram::readUsed() {
     {
         Ram::upData();
     }
-    catch (const std::exception&)
+    catch (const std::exception&e)
     {
-
+        throw std::invalid_argument(e.what());
     }
     return used;
 }

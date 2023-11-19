@@ -10,9 +10,9 @@ CpuInfo Hardware::getCpuInfo() {
 		cpuInfo.temperature = cpu->getCpuTemperature();
 		cpuInfo.load = cpu->getCpuLoad();
 	}
-	catch (const std::exception&)
+	catch (const std::exception&e)
 	{
-
+		throw std::invalid_argument(e.what());
 	}
 
 	return cpuInfo;
@@ -33,9 +33,9 @@ GpuInfo Hardware::getGpuInfo() {
 		gpuInfo.ramInfo.used = gpu->getGpuRamUsed();
 		gpuInfo.ramInfo.total = gpu->getGpuRamTotal();
 	}
-	catch (const std::exception&)
+	catch (const std::exception&e)
 	{
-
+		throw std::invalid_argument(e.what());
 	}
 	return gpuInfo;
 }
@@ -51,9 +51,9 @@ RamInfo Hardware::getRamInfo() {
 		ramInfo.total = ram->readTotal();
 		ramInfo.used = ram->readUsed();
 	}
-	catch (const std::exception&)
+	catch (const std::exception&e)
 	{
-
+		throw std::invalid_argument(e.what());
 	}
 	return ramInfo;
 }
@@ -62,12 +62,28 @@ Hardware::Hardware() {
 	try
 	{
 		cpu = new Cpu(new Wmi);
+	}
+	catch (const std::exception& e)
+	{
+		throw std::invalid_argument(e.what());
+	}
+
+	try
+	{
 		ram = new Ram;
+	}
+	catch (const std::exception& e)
+	{
+		throw std::invalid_argument(e.what());
+	}
+
+	try
+	{
 		gpu = new Gpu;
 	}
 	catch (const std::exception& e)
 	{
-
+		throw std::invalid_argument(e.what());
 	}
 }
 
