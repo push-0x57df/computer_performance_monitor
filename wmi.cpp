@@ -96,7 +96,7 @@ int Wmi::getCpuLoadForWmi() {
     // 执行 WMI 查询
     hres = pSvc->ExecQuery(
         bstr_t("WQL"),
-        bstr_t("SELECT LoadPercentage FROM Win32_Processor"),
+        bstr_t("SELECT * FROM Win32_PerfFormattedData_PerfOS_Processor where Name='_Total'"),
         WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
         NULL,
         &pEnumerator
@@ -116,25 +116,37 @@ int Wmi::getCpuLoadForWmi() {
     // 获取查询结果
     IWbemClassObject* pclsObj = NULL;
     ULONG uReturn = 0;
-    while (pEnumerator)
-    {
-        HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
-        if (0 == uReturn)
-            break;
+    if (SUCCEEDED(hres)) {
 
-        VARIANT vtProp;
-        hr = pclsObj->Get(L"LoadPercentage", 0, &vtProp, 0, 0);
-        if (SUCCEEDED(hr))
+        while (pEnumerator)
         {
-            cpuLoad = vtProp.uintVal;
-            // std::cout << "CPU 负载百分比：" << vtProp.uintVal << std::endl;
-            VariantClear(&vtProp);
-        }
-        else {
-            throw std::invalid_argument("Could not execute WQL query.");
-        }
+            HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1,
+                &pclsObj, &uReturn);
 
-        pclsObj->Release();
+            if (0 == uReturn)
+            {
+                break;
+            }
+
+            VARIANT vtProp;
+
+            // Get the value of the 'PercentProcessorTime' property
+            hr = pclsObj->Get(L"PercentProcessorTime", 0, &vtProp, 0, 0);
+
+            if (WBEM_S_NO_ERROR != hr) {
+
+                if (pclsObj) {
+                    VariantClear(&vtProp);
+                    pclsObj->Release(); pclsObj = NULL;
+                }
+                break;
+            }
+            cpuLoad = std::stoi(vtProp.bstrVal);
+
+            VariantClear(&vtProp);
+
+            pclsObj->Release(); pclsObj = NULL;
+        }
     }
 
     return cpuLoad;

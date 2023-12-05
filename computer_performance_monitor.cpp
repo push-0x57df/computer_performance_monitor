@@ -46,7 +46,7 @@ unsigned __stdcall refreshInfoThreadFunc(void* data) {
 
 	while (true)
 	{
-		Sleep(1000);
+		Sleep(600);
 		CpuInfo cpuInfo = hardware->getCpuInfo();
 		// 处理器占用率
 		swprintf_s(cpuInfo1Value, 10, L"%d%%", cpuInfo.load);
