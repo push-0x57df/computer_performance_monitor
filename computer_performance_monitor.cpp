@@ -107,6 +107,60 @@ void refreshInfo() {
 
 }
 
+//设置当前程序开机启动
+void AutoPowerOn()
+{
+	HKEY hKey;
+	//std::string strRegPath = "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run";
+
+
+	//1、找到系统的启动项  
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS) ///打开启动项       
+	{
+		//2、得到本程序自身的全路径
+		TCHAR strExeFullDir[MAX_PATH];
+		GetModuleFileName(NULL, strExeFullDir, MAX_PATH);
+
+
+		//3、判断注册表项是否已经存在
+		TCHAR strDir[MAX_PATH] = {};
+		DWORD nLength = MAX_PATH;
+		long result = RegGetValue(hKey, nullptr, _T("computer_performance_monitor"), RRF_RT_REG_SZ, 0, strDir, &nLength);
+
+
+		//4、已经存在
+		if (result != ERROR_SUCCESS || _tcscmp(strExeFullDir, strDir) != 0)
+		{
+			//5、添加一个子Key,并设置值，"computer_performance_monitor"是应用程序名字（不加后缀.exe） 
+			RegSetValueEx(hKey, _T("computer_performance_monitor"), 0, REG_SZ, (LPBYTE)strExeFullDir, (lstrlen(strExeFullDir) + 1) * sizeof(TCHAR));
+
+
+			//6、关闭注册表
+			RegCloseKey(hKey);
+		}
+	}
+}
+
+
+//取消当前程序开机启动
+void CanclePowerOn()
+{
+	HKEY hKey;
+	//std::string strRegPath = "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run";
+
+
+	//1、找到系统的启动项  
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
+	{
+		//2、删除值
+		RegDeleteValue(hKey, _T("computer_performance_monitor"));
+
+
+		//3、关闭注册表
+		RegCloseKey(hKey);
+	}
+}
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
@@ -124,6 +178,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
 	// TODO: 在此处放置代码。
+
+	// 开机自动运行
+	AutoPowerOn();
 
 	// 初始化全局字符串
 	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -364,7 +421,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	swprintf_s(logtxt, L"[成功] 程序启动");
 	SendMessage(listbox_hwnd, LB_ADDSTRING, 0, (LPARAM)logtxt);
 
-	ShowWindow(hWnd, nCmdShow);
+	// ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 
 	return TRUE;
