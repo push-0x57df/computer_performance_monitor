@@ -14,9 +14,15 @@
 - 安装有单张英伟达显卡的电脑，其上必须安装英伟达显卡驱动程序。且支持英伟达第二代数据开放接口
 - 安装有标准内存的电脑，支持多条内存的统计
 
+## 编译环境搭建
+
+本程序的设计目标就是尽可能的简约，所以没有使用过多的第三方库和技术。因此本程序的源文件使用visual studio这款微软官方IDE即可完成编译运行和调试
+
+## 相关开源资料
+
 与其匹配的外接小屏幕开源资料：
 
 - 嵌入式程序：https://github.com/push-0x57df/computer_performance_monitor_rp_2040
-- 硬件设计资料：准备中
+- 硬件设计资料：https://oshwhub.com/push_a/xing-neng-jian-shi-qi
 
 已实现的串口通信协议见 https://github.com/push-0x57df/computer_performance_monitor_rp_2040 的 readme 部分
